@@ -15,3 +15,5 @@ Multi-Core Score:       6943.02
 
 Scores are based on 136 results.
 ```
+
+Results and discussion on [reddit](https://www.reddit.com/r/apple/comments/6jdfcz/geekbench_average_cpu_scores_for_all_2017/?st=j4dvvlyg&sh=353d8fa9).

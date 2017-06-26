@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# Dumps geekbench site for a given query and calculates average scores (single/multi)
-# Usage:
-# $> ./get-gb-scores.sh
-# $> query: macbook10,1 i7
-
 printf "query: "
 read query
 
@@ -25,7 +20,6 @@ do
     break
   fi
   i=$((i + 1))
-
 done
 
 echo -ne "\r\033[0K"
