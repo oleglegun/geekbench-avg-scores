@@ -14,7 +14,7 @@ while [ $i -le $maxPages ]
 do
   echo -ne " -> Downloading page $i\033[0K\r"
   
-  curl -s https://browser.primatelabs.com/v4/cpu/search\?utf8=✓\&page\=${i}\&q\=$queryEncoded >> ${filename}
+  curl -s https://browser.geekbench.com/v4/cpu/search\?utf8=✓\&page\=${i}\&q\=$queryEncoded >> ${filename}
 
   if grep -q "did not match any Geekbench 4 results" ${filename}; then
     break
