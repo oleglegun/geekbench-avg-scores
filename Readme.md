@@ -5,8 +5,8 @@ Script calculates average Geekbench scores (using data from [https://browser.pri
 Usage:
 
 ```
-./get-gb-scores.sh
-query: macbook10,1 i5
+# pass the search string as script query arguments
+./get-gb-scores.sh macbook10,1 i5
 
 Average Geekbench 4 scores for `macbook10,1 i5`:
 
