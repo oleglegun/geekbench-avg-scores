@@ -1,42 +1,62 @@
 #!/bin/bash
 
-printf "query: "
-read query
+if [[ $# -eq 0 ]]; then
+  echo "$0 <query>"
+  exit 1
+fi
+
+query="$@"
 
 maxPages=50
-i=1
 queryEncoded=$(node -p "encodeURIComponent('$query')")
-filename=$(echo $query | sed 's/ /-/')
 
-echo
+search() {
+  for page in $(seq 1 $maxPages); do
+    echo -ne " -> Downloading page $page\033[0K\r" 1>&2
 
-while [ $i -le $maxPages ]
-do
-  echo -ne " -> Downloading page $i\033[0K\r"
-  
-  curl -s https://browser.geekbench.com/v4/cpu/search\?utf8=✓\&page\=${i}\&q\=$queryEncoded >> ${filename}
+    result=$(curl -s https://browser.geekbench.com/v4/cpu/search\?utf8=%E2%9C%93\&page\=${page}\&q\=$queryEncoded)
+    echo "$result"
 
-  if grep -q "did not match any Geekbench 4 results" ${filename}; then
-    break
-  fi
-  i=$((i + 1))
-done
+    if echo "$result" | grep -q "did not match any Geekbench 4 results"; then
+      echo 1>&2
+      break
+    fi
+  done
+}
 
-echo -ne "\r\033[0K"
+scores() {
+  search | grep -A 1 "<td class='score'>" | grep '^[1-9][0-9]*$'
+}
 
 printf "Average Geekbench 4 scores for \`${query}\`:\n\n"
 
-cat ${filename} | grep -A 1 "<td class='score'>" | grep '^\d\d\d\+$' | paste -sd " " - | awk '\
-BEGIN {count = 0; single = 0; multi = 0; debug=0}\
-{for (i = 1; i <= NF; i=i+2) { single += $i; count++; } }\
-{for (i = 2; i <= NF; i=i+2) { multi += $i; } }\
-debug==1 {for (i=1; i <= NF; i=i+2) print $i}\
-debug==1 {print "==================="}\
-debug==1 {for (i=2; i <= NF; i=i+2) print $i}\
-END {\
-    print "Single-Core Score:\t" single/count;\
-    print "Multi-Core Score:\t" multi/count;\
-    print "\nScores are based on " count " results."\
-}'
+scores=$(scores)
+total=0
+total_single=0
+total_multi=0
 
-rm ${filename}
+while read single && read multi; do
+  total_single=$(($total_single+$single))
+  total_multi=$(($total_multi+$multi))
+  total=$(($total+1))
+done < <(echo "$scores")
+
+avg_single=$(($total_single/$total))
+avg_multi=$(($total_multi/$total))
+
+dev_single=0
+dev_multi=0
+
+while read single && read multi; do
+  single=$(($single-$avg_single))
+  multi=$(($multi-$avg_multi))
+  dev_single=$(($dev_single+$single*$single))
+  dev_multi=$(($dev_multi+$multi*$multi))
+done < <(echo "$scores")
+
+dev_single=$(echo "sqrt($dev_single/$total)" | bc)
+dev_multi=$(echo "sqrt($dev_multi/$total)" | bc)
+
+echo "Single-Core Score:  $avg_single ($dev_single stddev)"
+echo "Multi-Core Score:   $avg_multi ($dev_multi stddev)"
+echo "Scores are based on ${total} results."
